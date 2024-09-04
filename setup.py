@@ -1,12 +1,15 @@
-from setuptools import setup, find_packages
+import setuptools
 
-setup(
+with open('README.md', 'r', encoding='utf-8') as fh:
+    long_description = fh.read()
+
+setuptools.setup(
     name='pingze_classifier',
     version='0.1',
-    packages=find_packages(),
+    packages=setuptools.find_packages(),
     include_package_data=True,
     description='A Python package for classifying Chinese characters based on the Pingshui rhyme scheme',
-    long_description=open('README.md').read(),
+    long_description=long_description,
     long_description_content_type='text/markdown',
     author='rbnyng',
     author_email='',
@@ -19,7 +22,7 @@ setup(
     python_requires='>=3.6',
     install_requires=[
         'beautifulsoup4',
-        'requests'
+        'requests',
     ],
     extras_require={
         'dev': [
@@ -29,7 +32,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'scrape-pingze=pingze_classifier.scraper:scrape_ping_ze_rhyme'
+            'scrape-pingze=pingze_classifier.scraper:scrape_ping_ze_rhyme',
         ],
-    }
+    },
 )
