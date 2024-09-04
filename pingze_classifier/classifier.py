@@ -1,17 +1,19 @@
 import json
 import os
+import pkg_resources
 
 class PingZeClassifier:
     def __init__(self, json_file_path=None):
         if json_file_path is None:
             # Default to the JSON in the package data folder
-            current_dir = os.path.dirname(__file__)
-            json_file_path = os.path.join(current_dir, 'data', 'organized_ping_ze_rhyme_dict.json')
+            json_file_path = pkg_resources.resource_filename(
+                __name__, 'data/organized_ping_ze_rhyme_dict.json'
+            )
 
         # Load the ping-ze rhyme dictionary from the provided JSON file
         with open(json_file_path, 'r', encoding='utf-8') as file:
             self.ping_ze_dict = json.load(file)
-        
+                    
         # Collapse the ping and ze characters into strings
         self.ping_characters, self.ze_characters = self._collapse_ping_ze()
 

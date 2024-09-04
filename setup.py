@@ -5,7 +5,7 @@ with open('README.md', 'r', encoding='utf-8') as fh:
 
 setuptools.setup(
     name='pingze_classifier',
-    version='0.1',
+    version='0.11',
     packages=setuptools.find_packages(),
     include_package_data=True,
     description='A Python package for classifying Chinese characters based on the Pingshui rhyme scheme',
@@ -34,5 +34,8 @@ setuptools.setup(
         'console_scripts': [
             'scrape-pingze=pingze_classifier.scraper:scrape_ping_ze_rhyme',
         ],
+    },
+    package_data={
+        'pingze_classifier': ['data/organized_ping_ze_rhyme_dict.json'],
     },
 )
