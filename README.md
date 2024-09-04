@@ -1,6 +1,6 @@
-# PingZeClassifier
+# Ping-ze Classifier
 
-**PingZeClassifier** is a Python package designed to classify Chinese characters as 'ping' (平) or 'ze' (仄) based on the [Pingshui Rhyme](https://zh.wikisource.org/wiki/%E5%B9%B3%E6%B0%B4%E9%9F%BB) (平水韻) rhyme scheme. The package includes a pre-scraped JSON file that contains the complete data from the rhyme dictionary, and also provides a scraper to update the data if necessary.
+**Ping-ze Classifier** is a Python package designed to classify Chinese characters as 'ping' (平) or 'ze' (仄) tonal patterns based on the [Pingshui Rhyme](https://zh.wikisource.org/wiki/%E5%B9%B3%E6%B0%B4%E9%9F%BB) (平水韻) rhyme scheme. You can read more about ping-ze, or tonal patterns, [here.](https://en.wikipedia.org/wiki/Tone_pattern) The package includes a pre-scraped JSON file that contains the complete data from the rhyme dictionary, and also provides a scraper to update the data if necessary.
 
 ## Features
 
@@ -18,7 +18,7 @@ pip install pingze_classifier
 
 ## Usage
 
-###　Classifying Characters
+### Classifying Characters
 
 Once installed, you can use the PingZeClassifier to classify Chinese characters based on the Pingshui Rhyme (平水韻) scheme:
 
