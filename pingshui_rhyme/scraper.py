@@ -32,11 +32,22 @@ def scrape_ping_ze_rhyme(force_refresh=False):
             current_section_title = text.strip()
             rhyme_dict[current_section_title] = []  # Initialize an empty list for this section
         elif current_section_title:
-            if '【詞】' in text:
-                text = text.replace('【詞】', '').strip()
-            words = text.split()  # Split by whitespace to get individual words
+            if '【詞】' in text or '【辭】' in text:
+                text = text.replace('【詞】', '').replace('【辭】', '').strip()
+            words = text.split()
             rhyme_dict[current_section_title].extend(words)
-            current_section_title = None  # Reset the section title
+        elif text.startswith('【詞】') or text.startswith('【辭】'):
+            text = text.replace('【詞】', '').replace('【辭】', '').strip()
+            words = text.split()
+            rhyme_dict[current_section_title].extend(words)
+
+    def collapse_strings_in_dict(d):
+        for key, value in d.items():
+            if isinstance(value, list):
+                d[key] = [''.join(value)  ]
+            elif isinstance(value, dict):
+                collapse_strings_in_dict(value) 
+    collapse_strings_in_dict(rhyme_dict)
 
     organized_rhyme_dict = {
         "ping": {
