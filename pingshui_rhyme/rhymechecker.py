@@ -18,9 +18,9 @@ class RhymeChecker:
         Builds a dictionary where the keys are characters, and the values are their rhyme groups.
         """
         rhyme_dict = {}
-        for tone_type in self.rhyme_data:
-            for tone_group in self.rhyme_data[tone_type]:
-                for rhyme_category, characters in self.rhyme_data[tone_type][tone_group].items():
+        for tone_type in self.ping_ze_dict:
+            for tone_group in self.ping_ze_dict[tone_type]:
+                for rhyme_category, characters in self.ping_ze_dict[tone_type][tone_group].items():
                     for char_group in characters:
                         for char in char_group:
                             rhyme_dict[char] = (tone_type, tone_group, rhyme_category)
