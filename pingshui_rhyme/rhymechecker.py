@@ -39,6 +39,10 @@ class RhymeChecker:
     def do_rhyme(self, char1, char2):
         """
         Determines if two characters rhyme by comparing their rhyme groups and tone types.
+
+        In the instance that a character has multiple rhyme groups due to multiple pronunciations, it returns true if it has one rhyme group in common with the other character.
+
+        e.g. "鄉" is in 下平聲七陽 and 去聲二十三漾, it is assumed to use the rhyming pronunciation when compared to "昌" in 下平聲七陽
         """
         rhyme_groups1 = self.get_rhyme_group(char1)
         rhyme_groups2 = self.get_rhyme_group(char2)
@@ -56,6 +60,6 @@ class RhymeChecker:
     
     def get_rhyme_type(self, char):
         """
-        Returns the full list of rhyme types (e.g., ["上平聲二冬", "下平聲一東"]) of the given character.
+        Returns the full list of rhyme types of the given character.
         """
         return self.get_rhyme_group(char)
