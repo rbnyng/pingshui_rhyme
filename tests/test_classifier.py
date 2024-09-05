@@ -1,5 +1,5 @@
 import unittest
-from pingze_classifier import PingZeClassifier
+from pingshui_rhyme import PingZeClassifier
 
 class TestPingZeClassifier(unittest.TestCase):
 
