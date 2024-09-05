@@ -15,7 +15,7 @@ class RhymeChecker:
 
     def _build_rhyme_dict(self):
         """
-        Builds a dictionary where the keys are characters, and the values are their rhyme groups.
+        Builds a dictionary where the keys are characters, and the values are lists of their rhyme groups.
         """
         rhyme_dict = {}
         for tone_type in self.ping_ze_dict:
@@ -23,30 +23,39 @@ class RhymeChecker:
                 for rhyme_category, characters in self.ping_ze_dict[tone_type][tone_group].items():
                     for char_group in characters:
                         for char in char_group:
-                            rhyme_dict[char] = (tone_type, tone_group, rhyme_category)
+                            rhyme_group = (tone_type, tone_group, rhyme_category)
+                            if char in rhyme_dict:
+                                rhyme_dict[char].append(rhyme_group)
+                            else:
+                                rhyme_dict[char] = [rhyme_group]
         return rhyme_dict
     
     def get_rhyme_group(self, char):
         """
-        Returns the rhyme group of a given character.
+        Returns the list of rhyme groups for a given character, or None if the character is not found.
         """
         return self.rhyme_dict.get(char)
 
     def do_rhyme(self, char1, char2):
         """
-        Determines if two characters rhyme by comparing their rhyme group and tone type.
+        Determines if two characters rhyme by comparing their rhyme groups and tone types.
         """
-        rhyme_group1 = self.get_rhyme_group(char1)
-        rhyme_group2 = self.get_rhyme_group(char2)
+        rhyme_groups1 = self.get_rhyme_group(char1)
+        rhyme_groups2 = self.get_rhyme_group(char2)
 
-        if not rhyme_group1 or not rhyme_group2:
+        if not rhyme_groups1 or not rhyme_groups2:
             return False  # One or both characters are not in the rhyme data
+
+        # Check if there's any matching rhyme group between the two characters
+        for rhyme_group1 in rhyme_groups1:
+            for rhyme_group2 in rhyme_groups2:
+                if rhyme_group1 == rhyme_group2:
+                    return True
         
-        # Check if they share the same rhyme group (same tone, same rhyme category)
-        return rhyme_group1 == rhyme_group2
+        return False
     
     def get_rhyme_type(self, char):
         """
-        Returns the full rhyme type (e.g., "上平聲二冬") of the given character.
+        Returns the full list of rhyme types (e.g., ["上平聲二冬", "下平聲一東"]) of the given character.
         """
         return self.get_rhyme_group(char)
