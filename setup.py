@@ -5,10 +5,10 @@ with open('README.md', 'r', encoding='utf-8') as fh:
 
 setuptools.setup(
     name='pingshui_rhyme',
-    version='0.10',
+    version='0.11',
     packages=setuptools.find_packages(),
     include_package_data=True,
-    description='A Python package for classifying Chinese characters phonologically based on the Pingshui rhyme scheme',
+    description='A Python package for classifying Chinese characters phonologically based on the Middle Chinese Pingshui rhyme scheme',
     long_description=long_description,
     long_description_content_type='text/markdown',
     author='rbnyng',

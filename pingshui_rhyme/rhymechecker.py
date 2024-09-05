@@ -2,7 +2,7 @@ import json
 import pkg_resources
 
 class RhymeChecker:
-    def __init__(self, rhyme_data):
+    def __init__(self):
         if json_file_path is None:
             json_file_path = pkg_resources.resource_filename(
                 __name__, 'data/organized_ping_ze_rhyme_dict.json'
