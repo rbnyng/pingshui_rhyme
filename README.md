@@ -11,6 +11,7 @@ The package includes a pre-scraped JSON file that contains the complete data fro
 - **Rhyme group lookup**: Get detailed rhyme group information, such as tone type, tone group, and specific rhyme category for any given character.
 - **Pre-packaged data**: Includes a pre-scraped JSON file with the complete rhyme data.
 - **Scraper**: An optional scraper is included to regenerate the JSON file when the source data changes.
+- **Poem structure checking**: Analyze and verify the structure of classical Chinese poems (Jueju and Lushi forms).
 
 ## Installation
 
@@ -59,6 +60,75 @@ print(do_they_rhyme)  # Output: True
 rhyme_group = rhyme_checker.get_rhyme_group(char1)
 print(rhyme_group)
 # Output: ('ping', '上平聲部', '上平聲一東')
+```
+
+### Poem Structure Checking
+
+The `PoemStructureChecker` class allows you to analyze and verify the structure of classical Chinese poems (Jueju and Lushi forms).
+
+```python
+from pingshui_rhyme import PoemStructureChecker
+
+# Initialize the poem structure checker
+poem_checker = PoemStructureChecker()
+
+# Check a Jueju poem
+jueju_poem = '''
+床前明月光，
+疑是地上霜。
+舉頭望明月，
+低頭思故鄉。
+'''
+result, message = checker.check_poem_rhyming(jueju_poem)
+print(result)  # Output: True
+print(message)  # Output: "Poem follows jueju rhyming rules."
+
+# Check a Lushi poem
+lushi_poem = '''
+昔人已乘黃鶴去，
+此地空餘黃鶴樓。
+黃鶴一去不復返，
+白雲千載空悠悠。
+晴川歷歷漢陽樹，
+芳草萋萋鸚鵡洲。
+日暮鄉關何處是，
+煙波江上使人愁。
+'''
+result, message = checker.check_poem_rhyming(lushi_poem)
+print(result)  # Output: True
+print(message)  # Output: "Poem follows lushi rhyming rules."
+
+# Check ping-ze meter
+pingze_poem = '''
+歲莫陰陽催短景，天涯霜雪霽寒霄。
+五更鼓角聲悲壯，三峽星河影動搖。
+野哭千家聞戰伐，夷歌幾處起漁樵。
+臥龍躍馬終黃土，人事音書漫寂寥。 
+'''
+result, message = checker.check_poem_pingze_meter(pingze_poem)
+print(result)  # Output: True
+print(message)  # Output: "Poem follows the less restrictive ping-ze alternation pattern in 2nd, 4th, and 6th characters."
+```                     
+
+The `PoemStructureChecker` provides two main methods:
+
+1. `check_poem_rhyming(poem)`: Checks if the poem follows the proper rhyme scheme for Jueju or Lushi forms.
+2. `check_poem_pingze_meter(poem)`: Verifies if the poem follows the correct tonal pattern (ping-ze meter) according to classical Chinese poetry rules.
+
+These methods return a tuple containing a boolean (indicating whether the poem passes the check) and a message explaining the result.
+
+### Ping-Ze Label Conversion
+
+The `PoemStructureChecker` class also provides methods to convert ping-ze labels between Chinese and English:
+
+```python
+from pingshui_rhyme import PoemStructureChecker
+
+checker = PoemStructureChecker()
+
+# Convert ping-ze labels to Chinese
+chinese_labels = checker.pingze_en_convert_to_zh('ping')
+print(chinese_labels)  # Output: '平'
 ```
 
 ### Scraping and Regenerating the JSON Data

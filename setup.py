@@ -5,7 +5,7 @@ with open('README.md', 'r', encoding='utf-8') as fh:
 
 setuptools.setup(
     name='pingshui_rhyme',
-    version='0.16',
+    version='0.2',
     packages=setuptools.find_packages(),
     include_package_data=True,
     description='A Python package for classifying Chinese characters phonologically based on the Middle Chinese Pingshui rhyme scheme',
@@ -24,18 +24,7 @@ setuptools.setup(
         'beautifulsoup4',
         'requests',
     ],
-    extras_require={
-        'dev': [
-            'pytest',
-            'coverage',
-        ],
-    },
-    entry_points={
-        'console_scripts': [
-            'scrape-pingze=pingshui_rhyme.scraper:scrape_ping_ze_rhyme',
-        ],
-    },
     package_data={
-        'pingshui_rhyme': ['data/organized_ping_ze_rhyme_dict.json'],
+        'pingshui_rhyme': ['data/*.json'],
     },
 )
