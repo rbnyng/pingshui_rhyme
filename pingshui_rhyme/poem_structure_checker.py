@@ -48,37 +48,30 @@ class PoemStructureChecker:
         return patterns
 
     def clean_poem(self, poem):
-        """
-        Cleans and reformats a poem by:
-        - Removing any punctuation.
-        - Splitting the poem into individual lines based on punctuation or line length (5 or 7 characters).
-        - Stripping extra spaces or newlines.
-        """
-        # Remove any punctuation (commas, periods, etc.)
-        poem = re.sub(r'[，。！？；：、,.!?;:]', '', poem)
+        # try to split by punctuation or newlines to preserve line structure
+        lines = re.split(r'[，。！？；：、,.!?;:\n]+', poem)
 
-        # Strip extra whitespace or newlines
+        # Remove all whitespace (including internal) from each line and filter empty lines
+        lines = [re.sub(r'\s+', '', line) for line in lines]
+        lines = [line for line in lines if line]
+
+        # If we got lines from splitting on punctuation/newlines, return those
+        if len(lines) > 1:
+            return lines
+
+        # Otherwise, the poem has no punctuation/newlines, so split by character count
+        # Remove any whitespace
         poem = re.sub(r'\s+', '', poem)
-
-        # Automatically detect the character count per line (5 or 7 characters)
-        # If the poem has no punctuation or spaces, split it based on typical 5 or 7 characters per line
         length = len(poem)
-        
-        # Try splitting as 4 or 8 lines of 5 or 7 characters
-        if length % 5 == 0:
-            # 5-character poem
-            lines = [poem[i:i+5] for i in range(0, length, 5)]
-        elif length % 7 == 0:
-            # 7-character poem
-            lines = [poem[i:i+7] for i in range(0, length, 7)]
-        else:
-            # Default: assume input is already spaced or punctuated and split by newlines
-            lines = poem.split('\n')
 
-        # Remove any leading or trailing whitespace from each line
-        lines = [line.strip() for line in lines if line.strip()]
+        # Try splitting as lines of 4, 5, 6, 7, or 8 characters
+        for char_count in [4, 5, 6, 7, 8]:
+            if length % char_count == 0:
+                lines = [poem[i:i+char_count] for i in range(0, length, char_count)]
+                return lines
 
-        return lines
+        # If nothing worked, return the whole poem as a single line
+        return [poem] if poem else []
 
     def pingze_zh_convert_to_en(self, pattern):
         return pattern.replace('平', 'ping').replace('仄', 'ze')
@@ -89,6 +82,26 @@ class PoemStructureChecker:
     def check_poem_rhyming(self, poem):
         # Split the poem into lines
         lines = self.clean_poem(poem)
+
+        # Check for Gushi (古詩) format first
+        # Gushi: not 4 or 8 lines, consistent line length (4-8 chars), minimum 4 lines
+        if len(lines) != 4 and len(lines) != 8:
+            # Check minimum line count
+            if len(lines) < 4:
+                return False, "Poem must have at least 4 lines."
+
+            # Check if all lines have consistent length between 4-8 characters
+            characters_per_line = len(lines[0])
+            if characters_per_line < 4 or characters_per_line > 8:
+                return False, "Each line in Gushi must have 4-8 characters."
+
+            # Verify all lines have the same length
+            for line in lines:
+                if len(line) != characters_per_line:
+                    return False, "All lines in Gushi must have consistent character count."
+
+            # Gushi detected - no rhyme checking needed
+            return True, "Potential Gushi (古詩) format detected - rhyme and meter checking not applicable."
 
         # Determine if it's a Jueju (4 lines) or Lushi (8 lines)
         if len(lines) == 4:
@@ -171,6 +184,10 @@ class PoemStructureChecker:
     def check_poem_pingze_meter(self, poem):
         # Clean the poem and split into lines
         lines = self.clean_poem(poem)
+
+        # Check if this is Gushi format - skip pingze checking for Gushi
+        if len(lines) != 4 and len(lines) != 8:
+            return True, "Potential Gushi (古詩) format detected - pingze meter checking not applicable."
 
         # Determine if it's 5-character or 7-character
         characters_per_line = len(lines[0])
