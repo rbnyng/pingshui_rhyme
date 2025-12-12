@@ -2,6 +2,11 @@ import json
 from bs4 import BeautifulSoup
 import requests
 import os
+import argparse  
+
+HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+}
 
 def scrape_ping_ze_rhyme(force_refresh=False):
     output_file = os.path.join(os.path.dirname(__file__), 'data', 'organized_ping_ze_rhyme_dict.json')
@@ -13,7 +18,12 @@ def scrape_ping_ze_rhyme(force_refresh=False):
     
     # Load the page
     url = 'https://zh.wikisource.org/wiki/%E5%B9%B3%E6%B0%B4%E9%9F%BB'
-    response = requests.get(url)
+    try:
+        response = requests.get(url, headers=HEADERS)
+        response.raise_for_status()  # This will raise an error for bad responses (4xx or 5xx)
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching the URL: {e}")
+        return
     soup = BeautifulSoup(response.content, 'html.parser')
 
     # Initialize an empty hash map (dictionary)
@@ -23,9 +33,21 @@ def scrape_ping_ze_rhyme(force_refresh=False):
     # Locate the main content where rhyme data is present
     content = soup.find('div', class_='mw-parser-output')
 
+    if not content:
+        print("Error: Could not find the main content div ('mw-parser-output'). The website structure may have changed.")
+        return
+    
+    declaration_marker = "本作品在全世界都属于公有领域"
+
     # Iterate through all <p> tags that contain the rhyme data
     for paragraph in content.find_all('p'):
         text = paragraph.get_text(strip=True)
+
+        if declaration_marker in text:
+            text = text.split(declaration_marker)[0].strip()
+        
+        if not text: # Skip empty paragraphs after cleaning
+            continue
 
         # Check if the paragraph contains a rhyme section title (e.g., 上平聲一東)
         if text.startswith('上平聲') or text.startswith('下平聲') or text.startswith('上聲') or text.startswith('去聲') or text.startswith('入聲'):
@@ -81,4 +103,12 @@ def scrape_ping_ze_rhyme(force_refresh=False):
     print(f"Rhyme dictionary successfully scraped and saved to {output_file}.")
 
 if __name__ == "__main__":
-    scrape_ping_ze_rhyme()
+    parser = argparse.ArgumentParser(description="Scrape Pingshui Rhyme data from WikiSource.")
+    parser.add_argument(
+        "--force-refresh",
+        action="store_true",
+        help="Force the scraper to run even if the JSON file already exists."
+    )
+    args = parser.parse_args()
+
+    scrape_ping_ze_rhyme(force_refresh=args.force_refresh)

@@ -42,5 +42,40 @@ class TestPoemStructure(unittest.TestCase):
         self.assertTrue(result)
         self.assertEqual(message, "Poem follows the less restrictive ping-ze alternation pattern in 2nd, 4th, and 6th characters.")
 
+    def test_messy_format(self):
+        # A poem with tabs, weird spacing, and English punctuation
+        poem = '''
+        床前   明月光,
+        疑是\t地上霜.
+        舉頭   望明月;
+        低頭\t思故鄉!
+        '''
+        result, message = self.checker.check_poem_rhyming(poem)
+        self.assertTrue(result)
+        self.assertEqual(message, "Poem follows jueju rhyming rules.")
+
+    def test_invalid_line_length(self):
+        # A poem with 6 characters per line (invalid)
+        poem = '''
+        床前看明月光，
+        疑是看地上霜。
+        舉頭看望明月，
+        低頭看思故鄉。
+        '''
+        result, message = self.checker.check_poem_rhyming(poem)
+        self.assertFalse(result)
+        self.assertIn("Poem must have either 4 lines (Jueju) or 8 lines (Lushi)", message)
+
+    def test_invalid_line_count(self):
+        # A poem with only 3 lines (invalid)
+        poem = '''
+        床前明月光，
+        疑是地上霜。
+        舉頭望明月。
+        '''
+        result, message = self.checker.check_poem_rhyming(poem)
+        self.assertFalse(result)
+        self.assertIn("Poem must have either 4 lines (Jueju) or 8 lines (Lushi)", message)
+
 if __name__ == '__main__':
     unittest.main()

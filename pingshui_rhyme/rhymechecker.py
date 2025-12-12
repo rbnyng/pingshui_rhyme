@@ -50,14 +50,13 @@ class RhymeChecker:
         if not rhyme_groups1 or not rhyme_groups2:
             return False  # One or both characters are not in the rhyme data
 
-        # Check if there's any matching rhyme group between the two characters
-        for rhyme_group1 in rhyme_groups1:
-            for rhyme_group2 in rhyme_groups2:
-                if rhyme_group1 == rhyme_group2:
-                    return True
+        # Extract the core rhyme categories for each character (e.g., '上平聲一東' -> '一東')
+        core_rhymes1 = {group[2].split('聲')[-1] for group in rhyme_groups1}
+        core_rhymes2 = {group[2].split('聲')[-1] for group in rhyme_groups2}
         
-        return False
-    
+        # Return True if there is any intersection between the two sets of core rhymes
+        return not core_rhymes1.isdisjoint(core_rhymes2)
+        
     def get_rhyme_type(self, char):
         """
         Returns the full list of rhyme types of the given character.

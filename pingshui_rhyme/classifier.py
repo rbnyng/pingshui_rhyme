@@ -22,11 +22,21 @@ class PingZeClassifier:
         ze_dict = self.ping_ze_dict.get('ze', {})
 
         # Extract all characters from ping
-        ping_characters = "".join([char for rhyme_group in ping_dict.values() for rhymes in rhyme_group.values() for char in rhymes])
+        ping_characters = {
+            char for rhyme_group in ping_dict.values()
+            for rhymes_list in rhyme_group.values()
+            for rhyme_string in rhymes_list
+            for char in rhyme_string
+        }
 
         # Extract all characters from ze
-        ze_characters = "".join([char for rhyme_group in ze_dict.values() for rhymes in rhyme_group.values() for char in rhymes])
-
+        ze_characters = {
+            char for rhyme_group in ze_dict.values()
+            for rhymes_list in rhyme_group.values()
+            for rhyme_string in rhymes_list
+            for char in rhyme_string
+        }
+        
         return ping_characters, ze_characters
 
     def classify(self, sentence):

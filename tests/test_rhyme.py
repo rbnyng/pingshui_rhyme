@@ -21,8 +21,14 @@ class TestRhymeChecker(unittest.TestCase):
     def test_get_rhyme_type(self):
         char = "東"
         result = self.rhymechecker.get_rhyme_type(char)
-        expected = ('ping', '上平聲部', '上平聲一東')
+        expected = [('ping', '上平聲部', '上平聲一東')]
         self.assertEqual(result, expected)
 
+    def test_unknown_character(self):
+        char1 = "Hello"
+        char2 = "World"
+        result = self.rhymechecker.do_rhyme(char1, char2)
+        self.assertFalse(result)
+        
 if __name__ == '__main__':
     unittest.main()

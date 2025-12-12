@@ -55,10 +55,10 @@ class PoemStructureChecker:
         - Stripping extra spaces or newlines.
         """
         # Remove any punctuation (commas, periods, etc.)
-        poem = re.sub(r'[，。！？；：、]', '', poem)
+        poem = re.sub(r'[，。！？；：、,.!?;:]', '', poem)
 
         # Strip extra whitespace or newlines
-        poem = poem.replace('\n', '').strip()
+        poem = re.sub(r'\s+', '', poem)
 
         # Automatically detect the character count per line (5 or 7 characters)
         # If the poem has no punctuation or spaces, split it based on typical 5 or 7 characters per line
