@@ -33,14 +33,15 @@ class TestPoemStructure(unittest.TestCase):
 
     def test_pingze_meter(self):
         poem = '''
-        歲莫陰陽催短景，天涯霜雪霽寒霄。
+        歲暮陰陽催短景，天涯霜雪霽寒霄。
         五更鼓角聲悲壯，三峽星河影動搖。
-        野哭千家聞戰伐，夷歌幾處起漁樵。
-        臥龍躍馬終黃土，人事音書漫寂寥。 
+        野哭千家聞戰伐，夷歌數處起漁樵。
+        臥龍躍馬終黃土，人事音書漫寂寥。
         '''
         result, message = self.checker.check_poem_pingze_meter(poem)
         self.assertTrue(result)
-        self.assertEqual(message, "Poem follows the less restrictive ping-ze alternation pattern in 2nd, 4th, and 6th characters.")
+        # Updated message includes Dui and Nian rules
+        self.assertEqual(message, "Poem follows the Dui (對) and Nian (黏) rules for ping-ze alternation in 2nd, 4th, and 6th characters.")
 
     def test_messy_format(self):
         # A poem with tabs, weird spacing, and English punctuation
@@ -78,8 +79,8 @@ class TestPoemStructure(unittest.TestCase):
         self.assertFalse(result)
         self.assertIn("Poem must have at least 4 lines", message)
 
-    def test_gushi_valid_5_char_10_lines(self):
-        # A valid gushi with 10 lines, 5 characters each
+    def test_pailu_10_lines_5_char(self):
+        # A 10-line poem with 5 characters each is now treated as Pailu (排律), not Gushi
         poem = '''
         明月何皎皎，照我羅牀幃
         憂愁不能寐，覽衣起徘徊
@@ -88,11 +89,13 @@ class TestPoemStructure(unittest.TestCase):
         引領還入房，淚下沾裳衣
         '''
         result, message = self.checker.check_poem_rhyming(poem)
-        self.assertTrue(result)
-        self.assertEqual(message, "Potential Gushi (古詩) format detected - rhyme and meter checking not applicable.")
+        # This will likely fail rhyme checking since it's random content,
+        # but it should NOT be marked as gushi (which would skip checking)
+        self.assertNotIn('Gushi', message)
+        self.assertNotIn('古詩', message)
 
-    def test_gushi_valid_7_char_10_lines(self):
-        # A valid gushi with 10 lines, 7 characters each
+    def test_pailu_10_lines_7_char(self):
+        # A 10-line poem with 7 characters each is treated as Pailu (排律), not Gushi
         poem = '''
         昔人已乘黃鶴去，
         此地空餘黃鶴樓。
@@ -106,8 +109,10 @@ class TestPoemStructure(unittest.TestCase):
         萬里江山入畫圖。
         '''
         result, message = self.checker.check_poem_rhyming(poem)
-        self.assertTrue(result)
-        self.assertEqual(message, "Potential Gushi (古詩) format detected - rhyme and meter checking not applicable.")
+        # This will fail rhyme checking since it's random content,
+        # but it should not be marked as gushi (which would skip checking)
+        self.assertNotIn('Gushi', message)
+        self.assertNotIn('古詩', message)
 
     def test_gushi_invalid_too_few_lines(self):
         # Invalid gushi - only 3 lines
@@ -132,7 +137,7 @@ class TestPoemStructure(unittest.TestCase):
         '''
         result, message = self.checker.check_poem_rhyming(poem)
         self.assertFalse(result)
-        self.assertEqual(message, "All lines in Gushi must have consistent character count.")
+        self.assertEqual(message, "All lines must have consistent character count.")
 
     def test_gushi_invalid_chars_too_short(self):
         # Invalid gushi - lines too short (3 chars)
@@ -146,7 +151,7 @@ class TestPoemStructure(unittest.TestCase):
         '''
         result, message = self.checker.check_poem_rhyming(poem)
         self.assertFalse(result)
-        self.assertEqual(message, "Each line in Gushi must have 4-8 characters.")
+        self.assertEqual(message, "Each line must have 4-8 characters.")
 
     def test_gushi_invalid_chars_too_long(self):
         # Invalid gushi - lines too long (9 chars)
@@ -159,16 +164,17 @@ class TestPoemStructure(unittest.TestCase):
         '''
         result, message = self.checker.check_poem_rhyming(poem)
         self.assertFalse(result)
-        self.assertEqual(message, "Each line in Gushi must have 4-8 characters.")
+        self.assertEqual(message, "Each line must have 4-8 characters.")
 
     def test_gushi_pingze_skipped(self):
-        # Test that pingze meter check is skipped for gushi
+        # Test that pingze meter check is skipped for real gushi (odd line count)
+        # Using 9 lines to ensure it's treated as Gushi, not Pailu
         poem = '''
         青青河畔草，鬱鬱園中柳
         盈盈樓上女，皎皎當窗牖
         娥娥紅粉妝，纖纖出素手
         昔為倡家女，今為蕩子婦
-        蕩子行不歸，空床難獨守
+        蕩子行不歸，
         '''
         result, message = self.checker.check_poem_pingze_meter(poem)
         self.assertTrue(result)

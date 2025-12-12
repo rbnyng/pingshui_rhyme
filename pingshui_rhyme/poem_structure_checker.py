@@ -83,33 +83,35 @@ class PoemStructureChecker:
         # Split the poem into lines
         lines = self.clean_poem(poem)
 
-        # Check for Gushi (古詩) format first
-        # Gushi: not 4 or 8 lines, consistent line length (4-8 chars), minimum 4 lines
-        if len(lines) != 4 and len(lines) != 8:
-            # Check minimum line count
-            if len(lines) < 4:
-                return False, "Poem must have at least 4 lines."
+        # Check minimum line count
+        if len(lines) < 4:
+            return False, "Poem must have at least 4 lines."
 
-            # Check if all lines have consistent length between 4-8 characters
-            characters_per_line = len(lines[0])
-            if characters_per_line < 4 or characters_per_line > 8:
-                return False, "Each line in Gushi must have 4-8 characters."
-
-            # Verify all lines have the same length
-            for line in lines:
-                if len(line) != characters_per_line:
-                    return False, "All lines in Gushi must have consistent character count."
-
-            # Gushi detected - no rhyme checking needed
-            return True, "Potential Gushi (古詩) format detected - rhyme and meter checking not applicable."
-
-        # Determine if it's a Jueju (4 lines) or Lushi (8 lines)
+        # Determine poem type based on line count
+        # Regulated verse (Jintishi 近體詩): Jueju (4), Lushi (8), Pailu (10+, even)
+        # Ancient verse (Gushi 古詩): Odd line count or non-standard structure
         if len(lines) == 4:
             poem_type = 'jueju'
         elif len(lines) == 8:
             poem_type = 'lushi'
+        elif len(lines) >= 10 and len(lines) % 2 == 0:
+            # Pailu (排律): Extended regulated verse with even line count >= 10
+            # Note: Pailu follows strict tonal rules and should be checked like Lushi
+            poem_type = 'pailu'
         else:
-            return False, "Poem must have either 4 lines (Jueju) or 8 lines (Lushi)."
+            # Gushi (古詩): Odd line count or other non-standard structure
+            # Check if all lines have consistent length between 4-8 characters
+            characters_per_line = len(lines[0])
+            if characters_per_line < 4 or characters_per_line > 8:
+                return False, "Each line must have 4-8 characters."
+
+            # Verify all lines have the same length
+            for line in lines:
+                if len(line) != characters_per_line:
+                    return False, "All lines must have consistent character count."
+
+            # Gushi detected - no rhyme checking needed
+            return True, "Potential Gushi (古詩) format detected - rhyme and meter checking not applicable."
 
         # Determine if it's 5-character or 7-character
         characters_per_line = len(lines[0])
@@ -119,9 +121,17 @@ class PoemStructureChecker:
         # Classify the ping-ze tone (平仄) of the last characters of each line
         pattern = [self.classifier.classify(line[-1]) for line in lines]
 
+        # Helper function to check if a tone can be ping (including polyphonic)
+        def can_be_ping(tone):
+            return tone[0] in ['ping', 'polyphonic']
+
+        # Helper function to check if a tone can be ze (including polyphonic)
+        def can_be_ze(tone):
+            return tone[0] in ['ze', 'polyphonic']
+
         # 1. Check first line: it can either rhyme or not
-        if pattern[0][0] == 'ping':
-            first_line_rhymes = True  # If the first line ends in ping, it may rhyme
+        if can_be_ping(pattern[0]):
+            first_line_rhymes = True  # If the first line ends in ping or polyphonic, it may rhyme
         elif pattern[0][0] == 'ze':
             first_line_rhymes = False  # If first line ends in ze, that character can't rhyme
         else:
@@ -130,7 +140,8 @@ class PoemStructureChecker:
         # 2. Check rhyming lines
         if poem_type == 'jueju':
             # Jueju: Check second and fourth lines for rhyming
-            if pattern[1][0] != 'ping' or pattern[3][0] != 'ping':
+            # Note: polyphonic characters are allowed since they can be pronounced as ping
+            if not can_be_ping(pattern[1]) or not can_be_ping(pattern[3]):
                 return False, "Second and fourth lines must end with ping characters."
             char2 = lines[1][-1]
             char4 = lines[3][-1]
@@ -144,22 +155,27 @@ class PoemStructureChecker:
                     return False, "First line must rhyme with the second and fourth lines if it uses ping."
 
             # Check third line: must end with ze
-            if pattern[2][0] != 'ze':
+            # Note: polyphonic characters are allowed since they can be pronounced as ze
+            if not can_be_ze(pattern[2]):
                 return False, "Third line must end with a ze character."
 
-        elif poem_type == 'lushi':
-            # Lushi: Check second, fourth, sixth, and eighth lines for rhyming
-            for i in [1, 3, 5, 7]:
-                if pattern[i][0] != 'ping':
+        elif poem_type in ['lushi', 'pailu']:
+            # Lushi (8 lines) and Pailu (10+ lines): Even lines rhyme
+            # Check all even-numbered lines (2, 4, 6, 8, ...) for rhyming
+            even_line_indices = [i for i in range(1, len(lines), 2)]
+
+            for i in even_line_indices:
+                if not can_be_ping(pattern[i]):
                     return False, f"Line {i+1} must end with a ping character."
-            
+
             char2 = lines[1][-1]
-            for i in [3, 5, 7]:
+            for i in even_line_indices[1:]:  # Skip line 2, check lines 4, 6, 8, ...
                 if not self.rhyme_checker.do_rhyme(char2, lines[i][-1]):
                     return False, f"Line {i+1} must rhyme with line 2."
-            
-            # Except for line 1, odd-numbered lines (3, 5, 7) are not allowed to rhyme.
-            for i in [2, 4, 6]:
+
+            # Odd-numbered lines (except line 1) should not rhyme
+            odd_line_indices = [i for i in range(2, len(lines), 2)]
+            for i in odd_line_indices:
                 if self.rhyme_checker.do_rhyme(char2, lines[i][-1]):
                     return False, f"Line {i+1} must not rhyme with line 2."
 
@@ -169,13 +185,14 @@ class PoemStructureChecker:
                 if not self.rhyme_checker.do_rhyme(char1, char2):
                     return False, "First line must rhyme with even lines if it uses ping."
 
-            # Check third, fifth, and seventh lines: must end with ze
-            for i in [2, 4, 6]:
-                if pattern[i][0] != 'ze':
+            # Check odd-numbered lines: must end with ze
+            # Note: polyphonic characters are allowed since they can be pronounced as ze
+            for i in odd_line_indices:
+                if not can_be_ze(pattern[i]):
                     return False, f"Line {i+1} must end with a ze character."
 
             # Ensure no three consecutive ping or ze in line endings
-            for i in range(6):
+            for i in range(len(lines) - 2):
                 if pattern[i] == pattern[i+1] == pattern[i+2]:
                     return False, "No three consecutive ping or ze are allowed."
 
@@ -185,45 +202,64 @@ class PoemStructureChecker:
         # Clean the poem and split into lines
         lines = self.clean_poem(poem)
 
-        # Check if this is Gushi format - skip pingze checking for Gushi
-        if len(lines) != 4 and len(lines) != 8:
+        # Check if this is Gushi format, skip pingze checking for Gushi
+        # Gushi heuristic: odd line count or < 10 lines that aren't 4 or 8
+        if len(lines) < 4:
+            return False, "Poem must have at least 4 lines."
+
+        # Only check meter for Jintishi (regulated verse): Jueju (4), Lushi (8), Pailu (10+ even)
+        if len(lines) not in [4, 8] and not (len(lines) >= 10 and len(lines) % 2 == 0):
             return True, "Potential Gushi (古詩) format detected - pingze meter checking not applicable."
 
-        # Determine if it's 5-character or 7-character
+        # Determine if its 5-character or 7-character
         characters_per_line = len(lines[0])
         if characters_per_line not in [5, 7]:
             return False, "Each line must have 5 or 7 characters."
 
-        # Check both rhymed (ruyun) and non-rhymed (buruyun) patterns for both pingqi and zeqi
-        possible_patterns = self.patterns[characters_per_line]
+        # For Jueju (4) and Lushi (8), try strict pattern matching
+        # For Pailu (10+), only use fallback logic as patterns are too varied
+        if len(lines) in [4, 8]:
+            # Check both rhymed (ruyun) and non-rhymed (buruyun) patterns for both pingqi and zeqi
+            possible_patterns = self.patterns[characters_per_line]
 
-        # Try all combinations of patterns: pingqi_ruyun, pingqi_buruyun, zeqi_ruyun, zeqi_buruyun
-        for pattern_type, expected_patterns in possible_patterns.items():
-            all_lines_match = True
-            for i, line in enumerate(lines):
+            # Try all combinations of patterns: pingqi_ruyun, pingqi_buruyun, zeqi_ruyun, zeqi_buruyun
+            for pattern_type, expected_patterns in possible_patterns.items():
+                all_lines_match = True
+                for i, line in enumerate(lines):
 
-                # 王士禎《律詵定體》 "凡七言第一字俱不論"
-                # For seven-character poems, the first character of each line is not considered.
-                if characters_per_line == 7:
-                    # Replace the first character with a blank instead of removing it
-                    pingze_pattern = '〇' + ''.join([self.pingze_en_convert_to_zh(self.classifier.classify(char)[0]) for char in line[1:]])
-                    expected_pattern = '〇' + expected_patterns[i][1:]  # Add a space at the beginning to match
-                else:
-                    pingze_pattern = ''.join([self.pingze_en_convert_to_zh(self.classifier.classify(char)[0]) for char in line])
-                    expected_pattern = expected_patterns[i]
+                    # 王士禎《律詵定體》 "凡七言第一字俱不論"
+                    # For seven-character poems, the first character of each line is not considered.
+                    if characters_per_line == 7:
+                        expected_pattern_str = '〇' + expected_patterns[i][1:]
+                        # Convert expected pattern string to list for classify_with_pattern
+                        expected_list = [self.pingze_zh_convert_to_en(c) if c != '〇' else None for c in expected_pattern_str]
+                        # Classify with pattern guidance (polyphonic characters use expected pattern)
+                        classification = ['unknown'] + self.classifier.classify_with_pattern(line[1:], expected_list[1:])
+                        pingze_pattern = '〇' + ''.join([self.pingze_en_convert_to_zh(c) for c in classification[1:]])
+                    else:
+                        expected_pattern_str = expected_patterns[i]
+                        # Convert expected pattern string to list for classify_with_pattern
+                        expected_list = [self.pingze_zh_convert_to_en(c) for c in expected_pattern_str]
+                        # Classify with pattern guidance (polyphonic characters use expected pattern)
+                        classification = self.classifier.classify_with_pattern(line, expected_list)
+                        pingze_pattern = ''.join([self.pingze_en_convert_to_zh(c) for c in classification])
 
-                # Compare to the expected pattern
-                if pingze_pattern != expected_pattern:
-                    all_lines_match = False
-                    break
+                    # Compare to the expected pattern
+                    if pingze_pattern != expected_pattern_str:
+                        all_lines_match = False
+                        break
 
-            # If any one pattern type fully matches, return success
-            if all_lines_match:
-                return True, f"Poem follows {pattern_type} ping-ze pattern."
+                # If any one pattern type fully matches, return success
+                if all_lines_match:
+                    return True, f"Poem follows {pattern_type} ping-ze pattern."
 
-        # If strict pattern checks fail, resort to the less restrictive 2nd, 4th, 6th character alternation check
+        # If strict pattern checks fail, resort to the less restrictive alternation check
         # 釋真空《新編篇韻貫珠集》 "一三五不論，二四六分明"
-        for i in range(0, len(lines) - 1, 2):
+        # This checks two rules:
+        # Dui (對): Opposition within couplets (lines 1-2, 3-4, 5-6, etc.)
+        # Nian (黏): Adhesion between couplets (line 2 sticks to line 3, line 4 to line 5, etc.)
+
+        for i in range(0, len(lines) - 1):
             line1 = lines[i]
             line2 = lines[i + 1]
 
@@ -231,14 +267,31 @@ class PoemStructureChecker:
             if characters_per_line == 7:
                 tone_positions = [1, 3, 5]  # 0-based indexing
             else:
-                tone_positions = [1, 3]  # 5-character lines only have two positions to check
+                tone_positions = [1, 3]  # 5-character lines
 
             for pos in tone_positions:
-                tone1 = self.pingze_en_convert_to_zh(self.classifier.classify(line1[pos])[0])
-                tone2 = self.pingze_en_convert_to_zh(self.classifier.classify(line2[pos])[0])
+                tone1_raw = self.classifier.classify(line1[pos])[0]
+                tone2_raw = self.classifier.classify(line2[pos])[0]
 
-                # Check if tones are opposite: ping (平) and ze (仄)
-                if tone1 == tone2:
-                    return False, f"Ping ze tone mismatch between line {i+1} and line {i+2} at character position {pos+1}."
+                # Convert to Chinese characters for display
+                tone1_zh = self.pingze_en_convert_to_zh(tone1_raw) if tone1_raw in ['ping', 'ze'] else tone1_raw
+                tone2_zh = self.pingze_en_convert_to_zh(tone2_raw) if tone2_raw in ['ping', 'ze'] else tone2_raw
 
-        return True, "Poem follows the less restrictive ping-ze alternation pattern in 2nd, 4th, and 6th characters."
+                # Check if this is a couplet boundary (i is even: 0-1, 2-3, 4-5, ...)
+                # or a couplet connection (i is odd: 1-2, 3-4, 5-6, ...)
+                if i % 2 == 0:
+                    # Dui (對): Within a couplet, tones should be opposite
+                    # If either character is polyphonic, we can't definitively check, so allow it
+                    if tone1_raw == 'polyphonic' or tone2_raw == 'polyphonic':
+                        continue  # Skip this check for polyphonic characters
+                    if tone1_raw == tone2_raw:
+                        return False, f"Dui (對) violation: Lines {i+1} and {i+2} should have opposite tones at position {pos+1}, but both are {tone1_zh}."
+                else:
+                    # Nian (黏): Between couplets, tones should be the same ("sticky")
+                    # If either character is polyphonic, we can't definitively check, so allow it
+                    if tone1_raw == 'polyphonic' or tone2_raw == 'polyphonic':
+                        continue  # Skip this check for polyphonic characters
+                    if tone1_raw != tone2_raw:
+                        return False, f"Nian (黏) violation: Lines {i+1} and {i+2} should have same tones at position {pos+1}, but found {tone1_zh} and {tone2_zh}."
+
+        return True, "Poem follows the Dui (對) and Nian (黏) rules for ping-ze alternation in 2nd, 4th, and 6th characters."
